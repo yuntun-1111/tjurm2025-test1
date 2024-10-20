@@ -7,7 +7,13 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int l=0;
+    while (str[l]!='\0')
+    {
+        l++;
+    }
+    
+    return l;
 }
 
 
@@ -19,6 +25,18 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    while (*str_1)
+    {
+        str_1++;
+    }
+    while (*str_2)
+    {
+        *str_1=*str_2;
+        str_1++;
+        str_2++;
+    }
+    *str_1='\0';
+    
 }
 
 
@@ -31,6 +49,22 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    char *s1=s,*p1;
+    while (*s1)
+    {
+        p1=p;
+        while (*p1&&*s1&&*p1==*s1)
+        {
+            p1++;
+            s1++;
+        }
+        if(!*p1)
+        {
+            return s;
+        }
+        s1=s+1;
+    }
+    
     return 0;
 }
 
@@ -97,6 +131,21 @@ void rgb2gray(float *in, float *out, int h, int w) {
 
     // IMPLEMENT YOUR CODE HERE
     // ...
+    float *in;
+    float *out;
+    int h,w;
+    for(int i=0;i<h;i++)
+    {
+        for(int j=0;j<w;j++)
+        {
+            int index=i*w+j;
+            float r=in[index*3+0];
+            float g=in[index*3+1];
+            float b=in[index*3+2];
+            float gray=0.1140*b+0.5870*g+0.2989*r;
+            out[index]=gray;
+        }
+    }
 }
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
@@ -198,11 +247,40 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
 
     int new_h = h * scale, new_w = w * scale;
     // IMPLEMENT YOUR CODE HERE
+    int new_h = static_cast<int>(h * scale);
+    int new_w = static_cast<int>(w * scale);
 
+    for (int i = 0; i < new_h; ++i) {
+        for (int j = 0; j < new_w; ++j) {
+            float x0 = j / scale;
+            float y0 = i / scale;
+
+            int x1 = static_cast<int>(x0);
+            int y1 = static_cast<int>(y0);
+            int x2 = std::min(x1 + 1, w - 1);
+            int y2 = std::min(y1 + 1, h - 1);
+
+            float dx = x0 - x1;
+            float dy = y0 - y1;
+
+            for (int k = 0; k < c; ++k) {
+                float q = in[(y1 * w + x1) * c + k] * (1 - dx) * (1 - dy) +
+                          in[(y1 * w + x2) * c + k] * dx * (1 - dy) +
+                          in[(y2 * w + x1) * c + k] * (1 - dx) * dy +
+                          in[(y2 * w + x2) * c + k] * dx * dy;
+
+                out[(i * new_w + j) * c + k] = q;
+            }
+        }
+    }
 }
 
 
+
 // 练习6，实现图像处理算法：直方图均衡化
+#include <vector>
+#include <algorithm>
+#include <cmath>
 void hist_eq(float *in, int h, int w) {
     /**
      * 将输入图片进行直方图均衡化处理。参数含义：
@@ -221,4 +299,32 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+
+    std::vector<int> hist(256, 0);
+    std::vector<float> cd(256, 0);
+
+    // 计算直方图
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            int v = static_cast<int>(in[i * w + j]);
+            hist[v]++;
+        }
+    }
+
+    // 计算累积直方图
+    float sum = 0;
+    for (int i = 0; i < 256; ++i) {
+        sum += hist[i];
+        hist[i] = sum / (h * w);
+        cd[i] = std::pow(hist[i], 1 / 2.2f);
+    }
+
+    // 应用映射
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            int v = static_cast<int>(in[i * w + j]);
+            in[i * w + j] = cd[v];
+        }
+    }
 }
+
